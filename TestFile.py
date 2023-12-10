@@ -1,6 +1,24 @@
 from tkinter import *
 from PIL import ImageTk, Image
 import sqlite3
+from tkinter import messagebox
+
+class MainPage:
+    def __init__(self, window, username):
+        self.window = window
+        self.window.geometry('800x600')
+        self.window.title(f'Welcome, {username}')
+
+        # Main UI components
+        self.main_label = Label(self.window, text=f"Hello, {username}!", font=("yu gothic ui", 20, "bold"))
+        self.main_label.pack(pady=50)
+
+        self.logout_button = Button(self.window, text="Logout", command=self.logout, font=("yu gothic ui", 13, "bold"), bg='#3047ff', cursor='hand2', activebackground='#3047ff', fg='white')
+        self.logout_button.pack(pady=20)
+
+    def logout(self):
+        self.window.destroy()  # Close the main page window
+        page()  # Open the login page again
 
 class LoginPage:
     def __init__(self, window):
@@ -86,7 +104,7 @@ class LoginPage:
         self.lgn_button_label.image = photo
         self.lgn_button_label.place(x=550, y=450)
         self.login = Button(self.lgn_button_label, text='LOGIN', font=("yu gothic ui", 13, "bold"), width=25, bd=0,
-                            bg='#3047ff', cursor='hand2', activebackground='#3047ff', fg='white')
+                            bg='#3047ff', cursor='hand2', activebackground='#3047ff', fg='white', command=self.login_action)
         self.login.place(x=20, y=10)
         # ========================================================================
         # ============================Forgot password=============================
@@ -176,10 +194,48 @@ class LoginPage:
         try:
             conn = sqlite3.connect('user_database.db')
             cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL,
+                    password TEXT NOT NULL
+                )
+            ''')
             cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
             conn.close()
             messagebox.showinfo("Success", "User successfully registered.")
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+    def login_action(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        if not username or not password:
+            messagebox.showwarning("Error", "Please enter both username and password.")
+            return
+
+        try:
+            conn = sqlite3.connect('user_database.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL,
+                    password TEXT NOT NULL
+                )
+            ''')
+            cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+            user = cursor.fetchone()
+            conn.close()
+
+            if user:
+                messagebox.showinfo("Success", f"Welcome, {username}!")
+                self.window.destroy()  # Close the login page window
+                MainPage(Tk(), username)  # Open the main page with the username
+            else:
+                messagebox.showerror("Error", "Invalid username or password.")
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error: {e}")
 
