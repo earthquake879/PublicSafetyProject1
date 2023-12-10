@@ -1,5 +1,4 @@
 from tkinter import *
-from PIL import ImageTk, Image
 import sqlite3
 from tkinter import messagebox
 import cv2 as cv
@@ -7,8 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import Toplevel, Label, Button, Text, Scrollbar
-from time import sleep
+from PIL import Image, ImageTk
 from openai import ChatCompletion
+
+
+    
 
 
 class NursePage:
@@ -163,6 +165,15 @@ class PatientsPage:
         self.questions_button = Button(self.window, text="Questions", command=self.open_questions, font=("yu gothic ui", 13, "bold"), bg='#4CAF50', cursor='hand2', activebackground='#45a049', fg='white')
         self.questions_button.pack(pady=20)
 
+        self.reminder_button = Button(self.window, text="Open Reminder App", command=self.open_reminder_app,
+        font=("yu gothic ui", 13, "bold"), bg='#4CAF50', cursor='hand2',
+        activebackground='#45a049', fg='white')
+        self.reminder_button.pack(pady=20)
+
+    def open_reminder_app(self):
+        reminder_window = Toplevel(self.window)
+        ReminderApp(reminder_window)
+
     def open_reminder_app(self):
         reminder_window = Toplevel(self.window)
         ReminderApp(reminder_window)
@@ -226,55 +237,55 @@ class QuestionsPage:
 
         return response['choices'][0]['message']['content']
 class ReminderApp:
-    def __init__(self, window):
-        self.window = window
-        self.window.withdraw()
-        self.window.update_idletasks()
-        x = (self.window.winfo_screenwidth() - self.window.winfo_reqwidth()) / 2
-        y = (self.window.winfo_screenheight() - self.window.winfo_reqheight()) / 2
-        self.window.geometry("+%d+%d" % (x, y))
-        self.window.deiconify()
+    def __init__(self, reminder_window):
+        self.reminder_window = reminder_window
+        self.reminder_window.title("Reminder App")
 
-        self.title = "Reminder App"
-        self.message = "Time for a reminder!"
+        self.drug_label = Label(self.reminder_window, text="Drug:")
+        self.drug_label.pack(pady=10)
+        
+        self.patient_label = Label(self.reminder_window, text="Patient:")
+        self.patient_label.pack(pady=10)
+        
+        self.dose_label = Label(self.reminder_window, text="Dose:")
+        self.dose_label.pack(pady=10)
+        
+        self.time_label = Label(self.reminder_window, text="Time:")
+        self.time_label.pack(pady=10)
 
-        self.drug_label = ttk.Label(self.window, text="Drug:")
-        self.drug_label.grid(column=0, row=0)
-        self.drug_entry = ttk.Entry(self.window)
-        self.drug_entry.grid(column=1, row=0)
+        self.drug_entry = Entry(self.reminder_window)
+        self.drug_entry.pack(pady=10)
+        
+        self.patient_entry = Entry(self.reminder_window)
+        self.patient_entry.pack(pady=10)
+        
+        self.dose_entry = Entry(self.reminder_window)
+        self.dose_entry.pack(pady=10)
+        
+        self.time_entry = Entry(self.reminder_window)
+        self.time_entry.pack(pady=10)
 
-        self.patient_label = ttk.Label(self.window, text="Patient:")
-        self.patient_label.grid(column=0, row=1)
-        self.patient_entry = ttk.Entry(self.window)
-        self.patient_entry.grid(column=1, row=1)
+        self.submit_button = Button(self.reminder_window, text="Submit", command=self.submit_action)
+        self.submit_button.pack(pady=10)
 
-        self.dose_label = ttk.Label(self.window, text="Dose:")
-        self.dose_label.grid(column=0, row=2)
-        self.dose_entry = ttk.Entry(self.window)
-        self.dose_entry.grid(column=1, row=2)
+    def submit_action(self):
+        drug = self.drug_entry.get()
+        patient = self.patient_entry.get()
+        dose = self.dose_entry.get()
+        time = self.time_entry.get()
 
-        self.time_label = ttk.Label(self.window, text="Time:")
-        self.time_label.grid(column=0, row=3)
-        self.time_entry = ttk.Entry(self.window)
-        self.time_entry.grid(column=1, row=3)
+        if not drug or not patient or not dose or not time:
+            messagebox.showwarning("Error", "Please fill in all fields.")
+            return
 
-        self.more_reminders = True
+        # Add your logic for handling the reminder details (drug, patient, dose, time) here
 
-        ttk.Label(self.window, text=self.message).grid(column=0, row=4)
-        ttk.Button(self.window, text='Yes', command=self.open_info_popup).grid(column=0, row=5)
-        ttk.Button(self.window, text='No', command=self.window.destroy).grid(column=1, row=5)
+        # You may want to use the information (drug, patient, dose, time) to set reminders or perform other actions.
+        # For now, we'll just print the details.
+        print(f"Drug: {drug}, Patient: {patient}, Dose: {dose}, Time: {time}")
 
-        self.window.lift()
-        self.window.attributes('-topmost', True)
-
-    def open_info_popup(self):
-        info_popup = Toplevel(self.window)
-        info_popup.title("Reminder Information")
-        info_text = f"Drug: {self.drug_entry.get()}\nPatient: {self.patient_entry.get()}\nDose: {self.dose_entry.get()}\nTime: {self.time_entry.get()}"
-        info_label = Label(info_popup, text=info_text, font=("yu gothic ui", 13, "bold"))
-        info_label.pack(padx=20, pady=20)
-        ok_button = Button(info_popup, text="OK", command=info_popup.destroy)
-        ok_button.pack(pady=10)
+        # Close the reminder window after submission
+        self.reminder_window.destroy()
 
 class LoginPage:
     def __init__(self, window):
