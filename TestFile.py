@@ -27,19 +27,15 @@ class NursePage:
         self.last_frame = None
         self.motion_detected = False
 
-        # Canvas for pencil sketch effect
         self.sketch_canvas = Canvas(self.window, width=640, height=480)
         self.sketch_canvas.pack()
 
-        # Start updating the camera feed and sketch canvas
         self.update_camera()
 
     def analyze_patient_data(self):
-        # Open a new pop-up window for live graphing
         graph_window = Toplevel(self.window)
         graph_window.title("Live Motion Graph")
 
-        # Create a frame for the live graph
         graph_frame = Frame(graph_window)
         graph_frame.pack()
 
@@ -61,26 +57,20 @@ class NursePage:
 
             ret, frame = self.camera.read()
             if ret:
-                # Convert the frame to grayscale for simplicity (modify as needed)
                 gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-                # Get a single row of pixel values (modify as needed)
                 pixel_values = gray_frame[gray_frame.shape[0] // 2, :]
 
-                # Update data for live graph
                 times_graph.append(len(times_graph) + 1)
                 pixel_data.append(pixel_values.mean())
 
-                # Update the line in the live graph
                 line_graph.set_data(times_graph, pixel_data)
                 ax_graph.relim()
                 ax_graph.autoscale_view()
 
-                # Redraw the graph
                 canvas.draw()
                 canvas.flush_events()
 
-                # Check for fast motion
                 if self.detect_fast_motion(frame):
                     if not self.motion_detected:
                         self.motion_detected = True
@@ -88,10 +78,8 @@ class NursePage:
                 else:
                     self.motion_detected = False
 
-            # Update the live graph every 10 milliseconds
             graph_window.after(10, update_graph)
 
-        # Start updating the live graph
         update_graph()
 
     def detect_fast_motion(self, frame):
@@ -99,30 +87,23 @@ class NursePage:
             self.last_frame = frame
             return False
 
-        # Convert the frame to grayscale
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-        # Blur the frame
         blurred = cv.GaussianBlur(gray, (5, 5), 0)
 
-        # Compute the absolute difference between the current frame and the last frame
         frame_delta = cv.absdiff(self.last_frame, frame)
         gray_delta = cv.cvtColor(frame_delta, cv.COLOR_BGR2GRAY)
 
-        # Threshold the delta image
-        _, thresh = cv.threshold(gray_delta, 145, 255, cv.THRESH_BINARY)  # Adjust the threshold value
+        _, thresh = cv.threshold(gray_delta, 145, 255, cv.THRESH_BINARY)  
 
-        # Dilate the thresholded image to fill in holes, then find contours
         thresh = cv.dilate(thresh, None, iterations=2)
         contours, _ = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-        # Check if super-speed motion is detected based on contour area and motion speed
         super_speed_motion_detected = any(
             cv.contourArea(contour) > 225 and cv.norm(cv.minAreaRect(contour)[1]) > 100
             for contour in contours
         )
 
-        # Update the last frame
         self.last_frame = frame
 
         return super_speed_motion_detected
@@ -150,15 +131,11 @@ class NursePage:
     def update_camera(self):
         ret, frame = self.camera.read()
         if ret:
-            # Applying the sketch effect on the frame
             pencil_sketch = self.apply_sketch_effect(frame)
-            # Convert the frame to ImageTk format
             img = ImageTk.PhotoImage(image=Image.fromarray(cv.cvtColor(pencil_sketch, cv.COLOR_BGR2RGB)))
-            # Update the canvas with the new image
             self.sketch_canvas.create_image(0, 0, anchor=NW, image=img)
-            self.sketch_canvas.img = img  # Keep a reference to avoid garbage collection
+            self.sketch_canvas.img = img  
 
-        # Update the camera feed and sketch canvas every 10 milliseconds
         self.window.after(10, self.update_camera)
     
 
