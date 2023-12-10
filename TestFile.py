@@ -2,6 +2,8 @@ from tkinter import *
 from PIL import ImageTk, Image
 import sqlite3
 from tkinter import messagebox
+import cv2 as cv
+import numpy as np
 
 class NursePage:
     def __init__(self, window):
@@ -10,11 +12,100 @@ class NursePage:
         self.window.title('Nurse Page')
         self.nurse_label = Label(self.window, text="Welcome, Nurse!", font=("yu gothic ui", 20, "bold"))
         self.nurse_label.pack(pady=50)
+        self.analyze_button = Button(self.window, text="Analyze Patients", command=self.analyze_patient_data, font=("yu gothic ui", 13, "bold"), bg='#4CAF50', cursor='hand2', activebackground='#45a049', fg='white')
+        self.analyze_button.pack(pady=20)
         self.sign_out_button = Button(self.window, text="Sign Out", command=self.sign_out, font=("yu gothic ui", 13, "bold"), bg='#3047ff', cursor='hand2', activebackground='#3047ff', fg='white')
         self.sign_out_button.pack(pady=20)
 
+        # New button for analyzing patients
+        
+
+        self.instructions_button = Button(self.window, text="Patient Instructions", command=self.patient_instructions, font=("yu gothic ui", 13, "bold"), bg='#008CBA', cursor='hand2', activebackground='#007B9F', fg='white')
+        self.instructions_button.pack(pady=20)
+
+        self.sign_out_button = Button(self.window, text="Sign Out", command=self.sign_out, font=("yu gothic ui", 13, "bold"), bg='#ff5252', cursor='hand2', activebackground='#ff0000', fg='white')
+        self.sign_out_button.pack(pady=20)
+
+    def analyze_patient_data(self):
+        # Open a new pop-up window for the OpenCV pencil sketch effect
+        sketch_window = Toplevel(self.window)
+        sketch_window.title("Pencil Sketch")
+        
+        # Open camera for the sketch effect
+        camera = cv.VideoCapture(0)
+
+        # Create a canvas to display the sketch
+        canvas = Canvas(sketch_window, width=640, height=480)
+        canvas.pack()
+
+        while True:
+            ret, frame = camera.read()
+            if ret:
+                # Applying the sketch effect on the frame
+                pencil_sketch = self.apply_sketch_effect(frame)
+                # Convert the frame to ImageTk format
+                img = ImageTk.PhotoImage(image=Image.fromarray(cv.cvtColor(pencil_sketch, cv.COLOR_BGR2RGB)))
+                # Update the canvas with the new image
+                canvas.create_image(0, 0, anchor=NW, image=img)
+                canvas.img = img  # Keep a reference to avoid garbage collection
+                sketch_window.update()
+
+            key = cv.waitKey(1)
+            if key == ord('q'):
+                break
+
+        camera.release()
+
+    def apply_sketch_effect(self, frame):
+        height, width, _ = frame.shape
+        resized_image = cv.resize(frame, (width, height), interpolation=cv.INTER_AREA)
+
+        kernel = np.array([[-1, -1, -1],
+                           [-1, 9, -1],
+                           [-1, -1, -1]])
+        sharpen_image = cv.filter2D(resized_image, -1, kernel)
+
+        gray = cv.cvtColor(sharpen_image, cv.COLOR_BGR2GRAY)
+        inverse_image = 255 - gray
+        blured_image = cv.GaussianBlur(inverse_image, (15, 15), 0, 0)
+        pencil_sketch = cv.divide(gray, 255 - blured_image, scale=256)
+
+        return pencil_sketch
+
     def sign_out(self):
         self.window.destroy()
+    def update_camera(self):
+        ret, frame = self.camera.read()
+        if ret:
+            # Applying the sketch effect on the frame
+            pencil_sketch = self.apply_sketch_effect(frame)
+            # Convert the frame to ImageTk format
+            img = ImageTk.PhotoImage(image=Image.fromarray(cv.cvtColor(pencil_sketch, cv.COLOR_BGR2RGB)))
+            # Update the canvas with the new image
+            self.canvas.create_image(0, 0, anchor=NW, image=img)
+            self.canvas.img = img  # Keep a reference to avoid garbage collection
+            self.window.after(10, self.update_camera)
+
+    def apply_sketch_effect(self, frame):
+        height, width, _ = frame.shape
+        resized_image = cv.resize(frame, (width, height), interpolation=cv.INTER_AREA)
+
+        kernel = np.array([[-1, -1, -1],
+                           [-1, 9, -1],
+                           [-1, -1, -1]])
+        sharpen_image = cv.filter2D(resized_image, -1, kernel)
+
+        gray = cv.cvtColor(sharpen_image, cv.COLOR_BGR2GRAY)
+        inverse_image = 255 - gray
+        blured_image = cv.GaussianBlur(inverse_image, (15, 15), 0, 0)
+        pencil_sketch = cv.divide(gray, 255 - blured_image, scale=256)
+
+        return pencil_sketch
+
+    def sign_out(self):
+        self.camera.release()
+        self.window.destroy()
+    
 
 class PatientsPage:
     def __init__(self, window):
@@ -25,9 +116,11 @@ class PatientsPage:
         self.patients_label.pack(pady=50)
         self.sign_out_button = Button(self.window, text="Sign Out", command=self.sign_out, font=("yu gothic ui", 13, "bold"), bg='#3047ff', cursor='hand2', activebackground='#3047ff', fg='white')
         self.sign_out_button.pack(pady=20)
-
+    
     def sign_out(self):
-        self.window.destroy()
+        login_window = Tk()
+        LoginPage(login_window)
+        login_window.mainloop()
 
 class LoginPage:
     def __init__(self, window):
@@ -174,4 +267,3 @@ if __name__ == '__main__':
     window = Tk()
     LoginPage(window)
     window.mainloop()
- 
